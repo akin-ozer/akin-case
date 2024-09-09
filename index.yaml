@@ -1,0 +1,10 @@
+apiVersion: v1
+entries:
+  monochart:
+  - apiVersion: v2
+    description: A Helm chart for Kubernetes
+    name: monochart
+    type: application
+    urls:
+    - charts/assets/monochart-1.0.0.tgz
+    version: 1.0.0

@@ -1,0 +1,107 @@
+deployment:
+  enabled: true
+  name: java-app
+  annotations:
+    secret.reloader.stakater.com/reload: java-app
+  labels:
+    app: java-app
+  topologySpreadConstraints:
+    - maxSkew: 1
+      whenUnsatisfiable: ScheduleAnyway
+      topologyKey: topology.kubernetes.io/zone
+      labelSelector:
+        matchLabels:
+          app: java-app
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - podAffinityTerm:
+            labelSelector:
+              matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                    - java-app
+            topologyKey: kubernetes.io/hostname
+          weight: 100
+  containers:
+    - name: java-app
+      image:
+        repository: aozer/java-app
+        tag: latest
+      ports:
+        - name: http
+          port: 8080
+          protocol: TCP
+      resources:
+        limits:
+          cpu: "1"
+          memory: 256Mi
+        requests:
+          cpu: 100m
+          memory: 256Mi
+      # readinessProbe:
+      #   failureThreshold: 3
+      #   httpGet:
+      #     path: /
+      #     port: 8080
+      #     scheme: HTTP
+      #   initialDelaySeconds: 5
+      #   periodSeconds: 5
+      #   successThreshold: 1
+      #   timeoutSeconds: 1
+      # livenessProbe:
+      #   failureThreshold: 3
+      #   httpGet:
+      #     path: /
+      #     port: 8080
+      #     scheme: HTTP
+      #   initialDelaySeconds: 5
+      #   periodSeconds: 10
+      #   successThreshold: 1
+      #   timeoutSeconds: 1
+
+hpa:
+  enabled: true
+  name: java-app
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+  target:
+    minReplicas: 4
+    maxReplicas: 8
+    ref:
+      apiVersion: apps/v1
+      kind: Deployment
+      name: java-app
+service:
+  enabled: true
+  name: java-app
+  appLabels:
+    app: java-app
+  ports:
+    - port: 80
+      targetPort: 8080
+      protocol: TCP
+      portName: http
+ingress:
+  enabled: true
+  name: java-app
+  annotations:
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+  class:
+    name: nginx
+  hosts:
+    - host: java-app.akinozer.com
+      path: /
+      pathType: ImplementationSpecific
+      service:
+        name: java-app
+        port: 80
+serviceAccount:
+  enabled: true
+  name: java-app

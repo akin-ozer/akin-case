@@ -1,0 +1,21 @@
+master:
+  masterOnly: false
+  replicaCount: 1
+data:
+  replicaCount: 0
+coordinating:
+  replicaCount: 0
+ingest:
+  replicaCount: 0
+ingress:
+  enabled: true
+  hostname: "elasticsearch.akinozer.com"
+  ingressClassName: "nginx"
+  annotations:
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+networkPolicy:
+  enabled: false
+persistence:
+  enabled: true
+global:
+  storageClass: "gp2"

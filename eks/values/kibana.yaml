@@ -1,0 +1,17 @@
+ingress:
+  enabled: true
+  hostname: "kibana.akinozer.com"
+  ingressClassName: "nginx"
+  annotations:
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+networkPolicy:
+  enabled: false
+elasticsearch:
+  hosts:
+    - elasticsearch.elasticsearch
+  port: 9200
+global:
+  storageClass: "gp2"
+configuration:
+  server:
+    publicBaseUrl: http://kibana.akinozer.com

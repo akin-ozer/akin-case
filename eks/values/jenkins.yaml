@@ -1,0 +1,50 @@
+controller:
+  componentName: jenkins-controller
+  image: 'jenkins/jenkins'
+  tag: 'lts'
+  imagePullPolicy: 'Always'
+  adminSecret: true
+  adminUser: admin
+  jenkinsAdminEmail: jenkins@example.com
+  ingress:
+    enabled: true
+    hostName: jenkins.akinozer.com
+    pathType: ImplementationSpecific
+    ingressClassName: nginx
+    annotations:
+      external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+  resources:
+    requests:
+      cpu: '500m'
+      memory: '2048Mi'
+    limits:
+      cpu: '2000m'
+      memory: '4096Mi'
+  JCasC:
+    enabled: true
+    pluginVersion: 1.35
+    configScripts:
+      welcome-message: |
+        jenkins:
+          systemMessage: This Jenkins is configured and managed 'as code'.
+
+  sidecars:
+    configAutoReload:
+      enabled: true
+      image: shadwell/k8s-sidecar:0.0.2
+      imagePullPolicy: IfNotPresent
+      sshTcpPort: 1044
+      label: jenkins_config
+      folder: /var/jenkins_home/casc_configs
+
+  containerEnv:
+    - name: CASC_JENKINS_CONFIG
+      value: /var/jenkins_home/casc_configs/jenkins.yaml
+
+  installPlugins:
+    - kubernetes:latest
+    - kubernetes-credentials:latest
+    - workflow-aggregator:latest
+    - workflow-job:latest
+    - credentials-binding:latest
+    - git:latest

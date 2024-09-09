@@ -1,0 +1,48 @@
+deployment:
+  enabled: true
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 2
+      maxUnavailable: 0
+  restartPolicy: Always
+  serviceAccount: default
+hpa:
+  enabled: false
+  name: ""
+  target:
+    minReplicas: 1
+    maxReplicas: 2
+    metrics:
+      - type: Resource
+        resource:
+          name: cpu
+          target:
+            type: Utilization
+            averageUtilization: 70
+    ref:
+      apiVersion: apps/v1
+      kind: Deployment
+      name: ""
+
+ingress:
+  enabled: false
+
+serviceAccount:
+  enabled: false
+  annotations: {}
+  labels: {}
+  name: ""
+
+service:
+  enabled: false
+  name: ""
+  appName: ""
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: 80
+      nodePort: 30000
+      protocol: TCP
+      portName: ""

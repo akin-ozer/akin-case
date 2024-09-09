@@ -1,0 +1,73 @@
+defaultRules:
+  create: true
+  rules:
+    etcd: false
+    kubeScheduler: false
+
+kubeScheduler:
+  enabled: false
+
+kubeEtcd:
+  enabled: false
+
+alertmanager:
+  enabled: true
+  ingress:
+    enabled: true
+    hosts:
+      - monitoring.akinozer.com
+    paths:
+      - "/alertmanager"
+    pathType: ImplementationSpecific
+    ingressClassName: nginx
+    annotations:
+      external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+  alertmanagerSpec:
+    routePrefix: "/alertmanager"
+
+additionalPrometheusRulesMap:
+  rule-name:
+    groups:
+    - name: PodRestart
+      rules:
+        - alert: PodRestart
+          expr: rate(kube_pod_container_status_restarts[1h]) * 3600 > 1
+          for: 1m
+          labels:
+            severity: 'critical'
+            alert_type: 'infrastructure'
+          annotations:
+            description: ' Pod {{$labels.namespace}}/{{$labels.pod}} restarting more than once during last one hour. '
+            summary: 'Pod in {{ $labels.namespace }} namespace is restarted'
+
+grafana:
+  enabled: true
+  adminPassword: prom-operator
+  ingress:
+    enabled: true
+    hosts:
+      - monitoring.akinozer.com
+    path: "/grafana"
+    pathType: ImplementationSpecific
+    ingressClassName: nginx
+    annotations:
+      external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+  grafana.ini:
+    server:
+      domain: "monitoring.akinozer.com"
+      root_url: "https://monitoring.akinozer.com/grafana"
+      serve_from_sub_path: true
+prometheusOperator:
+  enabled: true
+
+prometheus:
+  enabled: true
+  prometheusSpec:
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: gp2
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 5Gi

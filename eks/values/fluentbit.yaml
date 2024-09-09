@@ -1,0 +1,52 @@
+daemonset:
+  enabled: true
+networkPolicy:
+  enabled: false
+ingress:
+  enabled: true
+  hostname: "fluentbit.akinozer.com"
+  ingressClassName: "nginx"
+  annotations:
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+config:
+  service: |
+    [SERVICE]
+        Flush         2
+        Log_Level     info
+        Daemon        off
+        Parsers_File  parsers.conf
+        HTTP_Server   On
+        HTTP_Listen   0.0.0.0
+        HTTP_Port     2020
+
+  inputs: |
+    [INPUT]
+        Name  tail
+        Tag   kubernetes.containers*
+        Path  /var/log/containers/*.log
+        multiline.parser docker, cri
+        Read_from_Head true
+
+  outputs: |
+    [OUTPUT]
+        Name            es
+        Match           *
+        Host            elasticsearch.elasticsearch
+        Port            9200
+        Logstash_Format On
+        Retry_Limit     False
+        Suppress_Type_Name On
+
+rbac:
+  create: true
+  nodeAccess: true
+  rules:
+    - apiGroups:
+        - ""
+      resources:
+        - pods
+        - namespaces
+      verbs:
+        - get
+        - list
+        - watch

@@ -1,0 +1,37 @@
+global:
+  domain: argocd.akinozer.com
+  logging:
+    format: json
+controller:
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+dex:
+  enabled: false
+notifications:
+  enabled: false
+applicationSet:
+  enabled: false
+server:
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    annotations:
+      external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+  additionalProjects:
+    - name: production-tools
+      description: Tools on Production cluster
+      sourceRepos:
+        - "*"
+      destinations:
+        - namespace: "*"
+          server: "*"
+      clusterResourceWhitelist:
+        - group: "*"
+          kind: "*"
+configs:
+  params:
+    server.insecure: true
+  cm:
+    admin.enabled: true

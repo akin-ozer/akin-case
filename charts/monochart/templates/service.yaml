@@ -1,0 +1,25 @@
+{{- if .Values.service.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ tpl .Values.service.name . }}
+  {{- if .Values.service.annotations }}
+  annotations: {{ tpl (toYaml .Values.service.annotations) . | nindent 4 }}
+  {{- end }}
+  {{- if .Values.service.labels }}
+  labels: {{ tpl (toYaml .Values.service.labels) . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    {{- range .Values.service.ports }}
+    - port: {{ .port }}
+      targetPort: {{ .targetPort }}
+      {{- if eq $.Values.service.type "NodePort" }}
+      nodePort: {{ .nodePort }}
+      {{- end }}
+      protocol: {{ .protocol }}
+      name: {{ .portName }}
+      {{- end }}
+  selector: {{ tpl (toYaml .Values.service.appLabels) . | nindent 4 }}
+{{- end -}}

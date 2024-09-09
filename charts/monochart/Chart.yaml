@@ -1,0 +1,4 @@
+apiVersion: v2
+description: A template Helm chart
+name: monochart
+version: 1.0.0
