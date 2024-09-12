@@ -1,0 +1,93 @@
+---
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: scale-up-db-replicas
+spec:
+  schedule: "0 7 * * *"  # Runs at 7:00 AM every day
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: kubectl
+            image: bitnami/kubectl:latest
+            command:
+            - /bin/sh
+            - -c
+            - |
+              kubectl patch databasereplica myapp-db-replicas --type='json' -p='[{"op": "replace", "path": "/spec/replicaCount", "value":5}]'
+          restartPolicy: OnFailure
+---
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: scale-down-db-replicas
+spec:
+  schedule: "0 19 * * *"  # Runs at 7:00 PM every day
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: kubectl
+            image: bitnami/kubectl:latest
+            command:
+            - /bin/sh
+            - -c
+            - |
+              kubectl patch databasereplica myapp-db-replicas --type='json' -p='[{"op": "replace", "path": "/spec/replicaCount", "value":3}]'
+          restartPolicy: OnFailure
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: db-warming-script
+data:
+  warm-db.sh: |
+    #!/bin/bash
+    PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -U $DB_USER -d $DB_NAME << EOF
+    SELECT * FROM frequently_accessed_table LIMIT 1000;
+    SELECT * FROM another_important_table WHERE date > NOW() - INTERVAL '7 days';
+    EOF
+---
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: warm-db-cache
+spec:
+  schedule: "30 7 * * *"  # Runs at 7:00 AM every day
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: db-warmer
+            image: postgres:13
+            command:
+            - /bin/sh
+            - -c
+            - /scripts/warm-db.sh
+            env:
+            - name: DB_HOST
+              value: myapp-db-read.default.svc.cluster.local
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: db-secrets
+                  key: username
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-secrets
+                  key: password
+            - name: DB_NAME
+              value: myapp_database
+            volumeMounts:
+            - name: warming-script
+              mountPath: /scripts
+          volumes:
+          - name: warming-script
+            configMap:
+              name: db-warming-script
+          restartPolicy: OnFailure

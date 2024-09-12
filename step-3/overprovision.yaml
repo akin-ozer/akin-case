@@ -1,0 +1,38 @@
+---
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: scale-up-app
+spec:
+  schedule: "0 7 * * *"  # Runs at 7:00 AM every day
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: kubectl
+            image: bitnami/kubectl:latest
+            command:
+            - /bin/sh
+            - -c
+            - kubectl scale deployment app-x --replicas=10
+          restartPolicy: OnFailure
+---
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: scale-down-app
+spec:
+  schedule: "0 19 * * *"  # Runs at 7:00 PM every day
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: kubectl
+            image: bitnami/kubectl:latest
+            command:
+            - /bin/sh
+            - -c
+            - kubectl scale deployment app-x --replicas=3
+          restartPolicy: OnFailure
